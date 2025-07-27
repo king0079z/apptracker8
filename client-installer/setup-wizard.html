@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Monitor Client Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .wizard-container {
+            background: white;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .wizard-header {
+            background: #f7fafc;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .wizard-header h1 {
+            color: #2d3748;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .wizard-header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .wizard-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #4a5568;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .wizard-footer {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            background: #f7fafc;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-message {
+            margin-top: 10px;
+            color: #4a5568;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #48bb78;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-icon svg {
+            width: 40px;
+            height: 40px;
+            stroke: white;
+            stroke-width: 3;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 3px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="wizard-container">
+        <div class="wizard-header">
+            <h1>Enterprise Monitor Client Setup</h1>
+            <p>Configure and install the monitoring client on this computer</p>
+        </div>
+
+        <div class="wizard-content">
+            <!-- Step 1: Configuration -->
+            <div class="step active" id="step1">
+                <h2>Client Configuration</h2>
+                <p style="margin-bottom: 20px; color: #718096;">
+                    Please provide the following information to configure the monitoring client.
+                </p>
+
+                <div class="form-group">
+                    <label for="department">Department *</label>
+                    <input type="text" id="department" placeholder="e.g., Engineering, Marketing, Design">
+                    <div class="help-text">Enter the department this computer belongs to</div>
+                    <div class="error-message" id="department-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="clientId">Client ID</label>
+                    <input type="text" id="clientId" readonly>
+                    <div class="help-text">Automatically generated based on computer name</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="serverUrl">Enterprise Server URL (Optional)</label>
+                    <input type="url" id="serverUrl" placeholder="http://enterprise-server.company.com:3443">
+                    <div class="help-text">Leave empty if not connecting to a central server</div>
+                    <div class="error-message" id="serverUrl-error"></div>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="autoStart" checked>
+                    <label for="autoStart">Start monitoring automatically when computer starts</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="allowNetworkAccess" checked>
+                    <label for="allowNetworkAccess">Allow network access for data collection</label>
+                </div>
+
+                <div class="form-group">
+                    <label for="monitoringInterval">Monitoring Interval</label>
+                    <select id="monitoringInterval">
+                        <option value="30000">30 seconds</option>
+                        <option value="60000" selected>1 minute</option>
+                        <option value="300000">5 minutes</option>
+                        <option value="900000">15 minutes</option>
+                    </select>
+                    <div class="help-text">How often to collect usage data</div>
+                </div>
+            </div>
+
+            <!-- Step 2: Installation Progress -->
+            <div class="step" id="step2">
+                <h2>Installing Client</h2>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar"></div>
+                    </div>
+                    <div class="progress-message" id="progressMessage">Preparing installation...</div>
+                </div>
+
+                <div class="spinner"></div>
+
+                <div style="margin-top: 30px; padding: 20px; background: #f7fafc; border-radius: 4px;">
+                    <h3 style="margin-bottom: 10px; color: #4a5568;">What's being installed:</h3>
+                    <ul style="list-style: none; color: #718096; font-size: 14px;">
+                        <li>✓ Enterprise Monitor Client Service</li>
+                        <li>✓ Local monitoring database</li>
+                        <li>✓ Network API endpoint (port 9876)</li>
+                        <li>✓ Auto-start configuration</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Step 3: Completion -->
+            <div class="step" id="step3">
+                <div style="text-align: center; padding: 40px 0;">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    
+                    <h2 style="margin-bottom: 20px;">Installation Complete!</h2>
+                    
+                    <p style="color: #718096; margin-bottom: 30px;">
+                        The Enterprise Monitor Client has been successfully installed and configured.
+                    </p>
+
+                    <div style="background: #f7fafc; padding: 20px; border-radius: 4px; text-align: left; max-width: 400px; margin: 0 auto;">
+                        <h4 style="margin-bottom: 10px;">Next Steps:</h4>
+                        <ol style="color: #718096; font-size: 14px; padding-left: 20px;">
+                            <li>The monitoring client is now running in the background</li>
+                            <li>Data collection will begin automatically</li>
+                            <li>The main application can discover this client via network scan</li>
+                            <li>Check port 9876 if you need to verify connectivity</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="wizard-footer">
+            <button class="btn btn-secondary" id="btnBack" style="display: none;">Back</button>
+            <div style="flex: 1;"></div>
+            <button class="btn btn-secondary" id="btnCancel">Cancel</button>
+            <button class="btn btn-primary" id="btnNext">Next</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let config = {};
+
+        // Initialize
+        async function init() {
+            config = await window.electronAPI.getDefaultConfig();
+            document.getElementById('clientId').value = config.clientId;
+            document.getElementById('department').value = config.department || '';
+            document.getElementById('serverUrl').value = config.serverUrl || '';
+            document.getElementById('autoStart').checked = config.autoStart;
+            document.getElementById('allowNetworkAccess').checked = config.allowNetworkAccess;
+            document.getElementById('monitoringInterval').value = config.monitoringInterval;
+        }
+
+        // Navigation
+        document.getElementById('btnNext').addEventListener('click', async () => {
+            if (currentStep === 1) {
+                if (await validateConfiguration()) {
+                    showStep(2);
+                    startInstallation();
+                }
+            }
+        });
+
+        document.getElementById('btnBack').addEventListener('click', () => {
+            if (currentStep > 1) {
+                showStep(currentStep - 1);
+            }
+        });
+
+        document.getElementById('btnCancel').addEventListener('click', async () => {
+            if (currentStep === 3 || confirm('Are you sure you want to cancel the installation?')) {
+                await window.electronAPI.closeWizard();
+            }
+        });
+
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            currentStep = step;
+            
+            // Update buttons
+            document.getElementById('btnBack').style.display = step > 1 ? 'block' : 'none';
+            document.getElementById('btnNext').style.display = step < 3 ? 'block' : 'none';
+            document.getElementById('btnCancel').textContent = step === 3 ? 'Close' : 'Cancel';
+            
+            if (step === 2) {
+                document.getElementById('btnNext').disabled = true;
+            }
+        }
+
+        async function validateConfiguration() {
+            // Clear errors
+            document.querySelectorAll('.error-message').forEach(e => e.textContent = '');
+            
+            // Get values
+            config.department = document.getElementById('department').value.trim();
+            config.serverUrl = document.getElementById('serverUrl').value.trim();
+            config.autoStart = document.getElementById('autoStart').checked;
+            config.allowNetworkAccess = document.getElementById('allowNetworkAccess').checked;
+            config.monitoringInterval = parseInt(document.getElementById('monitoringInterval').value);
+            
+            const result = await window.electronAPI.validateConfig(config);
+            
+            if (!result.valid) {
+                result.errors.forEach(error => {
+                    if (error.includes('Department')) {
+                        document.getElementById('department-error').textContent = error;
+                    } else if (error.includes('server URL')) {
+                        document.getElementById('serverUrl-error').textContent = error;
+                    }
+                });
+                return false;
+            }
+            
+            return true;
+        }
+
+        async function startInstallation() {
+            const result = await window.electronAPI.installClient(config);
+            
+            if (result.success) {
+                showStep(3);
+            } else {
+                alert(`Installation failed: ${result.error}`);
+                showStep(1);
+            }
+        }
+
+        // Listen for progress updates
+        window.electronAPI.onInstallProgress((progress) => {
+            document.getElementById('progressBar').style.width = `${progress.progress}%`;
+            document.getElementById('progressMessage').textContent = progress.message;
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

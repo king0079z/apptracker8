@@ -1,0 +1,113 @@
+// Add this fix to the data-manager.js file
+
+// In the updateUsageData method, update the applications section:
+updateUsageData(monitoringData) {
+  const { applications, plugins, timestamp, allProcesses } = monitoringData;
+  
+  console.log(`Updating usage data - Apps: ${applications.size}, Plugins: ${plugins.size}`);
+  
+  // Update applications
+  applications.forEach((appData, appName) => {
+    if (!this.usageData.applications[appName]) {
+      this.usageData.applications[appName] = {
+        totalUsage: 0,
+        lastUsed: null,
+        sessions: [] // Ensure sessions array is initialized
+      };
+    }
+    
+    const app = this.usageData.applications[appName];
+    
+    // Ensure sessions array exists (for backwards compatibility)
+    if (!Array.isArray(app.sessions)) {
+      app.sessions = [];
+    }
+    
+    app.totalUsage += 1; // Each check = 1 minute
+    app.lastUsed = timestamp;
+    
+    // Add to current session or create new one
+    const lastSession = app.sessions[app.sessions.length - 1];
+    if (lastSession && this.isWithinSession(lastSession.endTime)) {
+      lastSession.endTime = timestamp;
+      lastSession.duration = this.getTimeDifference(lastSession.startTime, timestamp);
+    } else {
+      app.sessions.push({
+        startTime: timestamp,
+        endTime: timestamp,
+        duration: 1
+      });
+    }
+  });
+  
+  // Update plugins
+  plugins.forEach((pluginData, pluginName) => {
+    this.updatePluginUsage(pluginName, timestamp);
+  });
+  
+  // Auto-save periodically
+  this.saveData();
+}
+
+// Also update the mergePluginStructure method to ensure sessions arrays exist:
+mergePluginStructure() {
+  const defaultData = this.initializeUsageData();
+  
+  // Ensure all applications have sessions arrays
+  Object.keys(this.usageData.applications || {}).forEach(appName => {
+    if (!Array.isArray(this.usageData.applications[appName].sessions)) {
+      this.usageData.applications[appName].sessions = [];
+    }
+  });
+  
+  // Merge plugins structure
+  Object.keys(defaultData.plugins).forEach(vendor => {
+    if (!this.usageData.plugins[vendor]) {
+      this.usageData.plugins[vendor] = defaultData.plugins[vendor];
+    } else {
+      Object.keys(defaultData.plugins[vendor]).forEach(product => {
+        if (!this.usageData.plugins[vendor][product]) {
+          this.usageData.plugins[vendor][product] = defaultData.plugins[vendor][product];
+        } else if (typeof defaultData.plugins[vendor][product] === 'object' && 
+                   !defaultData.plugins[vendor][product].totalUsage) {
+          // Handle nested products
+          Object.keys(defaultData.plugins[vendor][product]).forEach(subProduct => {
+            if (!this.usageData.plugins[vendor][product][subProduct]) {
+              this.usageData.plugins[vendor][product][subProduct] = 
+                defaultData.plugins[vendor][product][subProduct];
+            }
+            // Ensure sessions array exists for plugins
+            if (!Array.isArray(this.usageData.plugins[vendor][product][subProduct].sessions)) {
+              this.usageData.plugins[vendor][product][subProduct].sessions = [];
+            }
+          });
+        } else {
+          // Ensure sessions array exists for direct plugins
+          if (!Array.isArray(this.usageData.plugins[vendor][product].sessions)) {
+            this.usageData.plugins[vendor][product].sessions = [];
+          }
+        }
+      });
+    }
+  });
+}
+
+// Update the updatePluginSession method:
+updatePluginSession(plugin, timestamp) {
+  // Ensure sessions array exists
+  if (!Array.isArray(plugin.sessions)) {
+    plugin.sessions = [];
+  }
+  
+  const lastSession = plugin.sessions[plugin.sessions.length - 1];
+  if (lastSession && this.isWithinSession(lastSession.endTime)) {
+    lastSession.endTime = timestamp;
+    lastSession.duration = this.getTimeDifference(lastSession.startTime, timestamp);
+  } else {
+    plugin.sessions.push({
+      startTime: timestamp,
+      endTime: timestamp,
+      duration: 1
+    });
+  }
+}

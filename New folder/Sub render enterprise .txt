@@ -1,0 +1,1044 @@
+// ===== COMPLETE ENTERPRISE DASHBOARD IMPLEMENTATION =====
+// Add this to your src/renderer/renderer.js file
+
+// View: Enterprise Dashboard with Real Client Data
+async function showEnterpriseDashboard() {
+    const contentArea = document.getElementById('contentArea');
+    
+    // Show loading state
+    contentArea.innerHTML = `
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Connecting to Enterprise Server...</p>
+        </div>
+    `;
+    
+    try {
+        // Get enterprise configuration from state or usage data
+        const serverUrl = state.usageData?.metadata?.enterpriseServer || 
+                         state.enterpriseConfig?.serverUrl || 
+                         'http://localhost:3443';
+        const apiKey = state.usageData?.metadata?.enterpriseApiKey || 
+                      state.enterpriseConfig?.apiKey || 
+                      'your-api-key';
+        
+        console.log('Connecting to enterprise server:', serverUrl);
+        
+        // Fetch real data from enterprise server
+        const headers = { 'X-API-Key': apiKey };
+        
+        // Get statistics
+        const statsResponse = await fetch(`${serverUrl}/api/statistics`, { headers });
+        if (!statsResponse.ok) throw new Error(`Server returned ${statsResponse.status}`);
+        const stats = await statsResponse.json();
+        
+        // Get all clients
+        const clientsResponse = await fetch(`${serverUrl}/api/clients`, { headers });
+        if (!clientsResponse.ok) throw new Error(`Server returned ${clientsResponse.status}`);
+        const clients = await clientsResponse.json();
+        
+        console.log(`Loaded ${clients.length} clients from enterprise server`);
+        
+        // Calculate real statistics
+        const totalUsers = new Set(clients.map(c => c.latest_usage?.system_info?.user?.username).filter(Boolean)).size;
+        const totalApps = countTotalUniqueApplications(clients);
+        const totalPlugins = countTotalUniquePlugins(clients);
+        const totalMonthlyCost = calculateTotalEnterpriseCost(clients);
+        const onlineClients = clients.filter(c => isClientOnline(c.last_seen)).length;
+        
+        contentArea.innerHTML = `
+            <div class="enterprise-header">
+                <h2>Enterprise Client Monitor</h2>
+                <p>Real-time monitoring of all connected client machines</p>
+                <div class="sync-status">
+                    <span class="sync-indicator active"></span>
+                    <span>Connected to: ${serverUrl}</span>
+                    <button class="btn btn-secondary" onclick="refreshEnterpriseDashboard()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="enterprise-summary">
+                <div class="summary-card">
+                    <div class="card-icon">🖥️</div>
+                    <div class="card-content">
+                        <div class="card-value">${clients.length}</div>
+                        <div class="card-label">Total Clients</div>
+                        <div class="card-sub">${onlineClients} online</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">👥</div>
+                    <div class="card-content">
+                        <div class="card-value">${totalUsers}</div>
+                        <div class="card-label">Active Users</div>
+                        <div class="card-sub">Across all departments</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-content">
+                        <div class="card-value">${totalApps}</div>
+                        <div class="card-label">Applications</div>
+                        <div class="card-sub">Unique applications</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">🔌</div>
+                    <div class="card-content">
+                        <div class="card-value">${totalPlugins}</div>
+                        <div class="card-label">Plugins</div>
+                        <div class="card-sub">Across all clients</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">💰</div>
+                    <div class="card-content">
+                        <div class="card-value">$${totalMonthlyCost}</div>
+                        <div class="card-label">Monthly Cost</div>
+                        <div class="card-sub">Total licensing</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Department Breakdown -->
+            <div class="department-section">
+                <h3>Department Overview</h3>
+                <div class="department-grid">
+                    ${generateDepartmentBreakdown(clients)}
+                </div>
+            </div>
+            
+            <!-- Filter Controls -->
+            <div class="filter-section">
+                <label>Filter by Department:</label>
+                <select id="deptFilter" onchange="filterClientsByDepartment(this.value)">
+                    <option value="">All Departments</option>
+                    ${Array.from(new Set(clients.map(c => c.department))).filter(Boolean).sort().map(dept => 
+                        `<option value="${dept}">${dept}</option>`
+                    ).join('')}
+                </select>
+                
+                <label>Filter by Status:</label>
+                <select id="statusFilter" onchange="filterClientsByStatus(this.value)">
+                    <option value="">All Status</option>
+                    <option value="online">Online Only</option>
+                    <option value="offline">Offline Only</option>
+                </select>
+                
+                <label>Search:</label>
+                <input type="text" id="clientSearch" placeholder="Search by user, hostname, or software..." 
+                       onkeyup="searchEnterpriseClients(this.value)" class="search-input">
+                
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="setEnterpriseView('grid')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Grid
+                    </button>
+                    <button class="view-btn" onclick="setEnterpriseView('table')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                        Table
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Client Display Area -->
+            <div id="clientDisplayArea" class="client-grid">
+                ${generateClientCards(clients)}
+            </div>
+        `;
+        
+        // Store clients in state for filtering
+        state.enterpriseClients = clients;
+        
+    } catch (error) {
+        console.error('Error loading enterprise data:', error);
+        contentArea.innerHTML = `
+            <div class="enterprise-header">
+                <h2>Enterprise Client Monitor</h2>
+                <p>Monitor all connected client machines</p>
+            </div>
+            
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h3>Unable to Connect to Enterprise Server</h3>
+                <p>Please check your server configuration and ensure the enterprise server is running.</p>
+                <div class="error-details">
+                    <p class="text-small text-muted">Error: ${error.message}</p>
+                    <p class="text-small text-muted">Server URL: ${serverUrl || 'Not configured'}</p>
+                    <p class="text-small text-muted">Make sure the enterprise server is running and accessible</p>
+                </div>
+                <button class="btn btn-primary mt-3" onclick="showEnterpriseDashboard()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    Retry Connection
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Generate client cards for grid view
+function generateClientCards(clients) {
+    if (!clients || clients.length === 0) {
+        return `
+            <div class="empty-state">
+                <p>No clients connected yet. Deploy the software monitor to client machines to see them here.</p>
+            </div>
+        `;
+    }
+    
+    return clients.map(client => {
+        const latestUsage = client.latest_usage || {};
+        const systemInfo = latestUsage.system_info || {};
+        const userInfo = systemInfo.user || {};
+        const isOnline = isClientOnline(client.last_seen);
+        const apps = latestUsage.applications || {};
+        const plugins = latestUsage.plugins || {};
+        
+        // Count active applications and plugins
+        const activeApps = Object.values(apps).filter(app => 
+            app.lastUsed && getDaysInactive(app.lastUsed) <= 7
+        ).length;
+        const totalApps = Object.keys(apps).length;
+        
+        let totalPlugins = 0;
+        let activePlugins = 0;
+        Object.values(plugins).forEach(vendor => {
+            Object.values(vendor).forEach(plugin => {
+                if (plugin.totalUsage !== undefined) {
+                    totalPlugins++;
+                    if (plugin.lastUsed && getDaysInactive(plugin.lastUsed) <= 7) {
+                        activePlugins++;
+                    }
+                }
+            });
+        });
+        
+        // Calculate monthly cost
+        const monthlyCost = calculateClientMonthlyCost(client);
+        
+        return `
+            <div class="client-card ${isOnline ? 'online' : 'offline'}" 
+                 data-department="${client.department || 'Unknown'}" 
+                 data-user="${userInfo.username || 'Unknown'}"
+                 data-status="${isOnline ? 'online' : 'offline'}">
+                <div class="client-card-header">
+                    <div class="client-status ${isOnline ? 'online' : 'offline'}"></div>
+                    <h3>${client.hostname}</h3>
+                    <span class="client-id">${client.client_id}</span>
+                </div>
+                
+                <div class="client-info-section">
+                    <div class="info-row">
+                        <span class="info-icon">👤</span>
+                        <span class="info-label">User:</span>
+                        <span class="info-value">${userInfo.username || 'Unknown'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">🏢</span>
+                        <span class="info-label">Dept:</span>
+                        <span class="info-value">${client.department || 'Unknown'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">🕐</span>
+                        <span class="info-label">Last Seen:</span>
+                        <span class="info-value">${formatTimeAgo(new Date(client.last_seen))}</span>
+                    </div>
+                    ${systemInfo.ipAddresses && systemInfo.ipAddresses.length > 0 ? `
+                    <div class="info-row">
+                        <span class="info-icon">🌐</span>
+                        <span class="info-label">IP:</span>
+                        <span class="info-value">${systemInfo.ipAddresses[0].address}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="system-specs">
+                    <h4>System Specifications</h4>
+                    <div class="spec-grid">
+                        <div class="spec-item">
+                            <span class="spec-label">OS</span>
+                            <span class="spec-value">${systemInfo.platform || 'Unknown'} ${systemInfo.osVersion || ''}</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">CPU</span>
+                            <span class="spec-value">${systemInfo.cpus?.cores || '?'} cores</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">RAM</span>
+                            <span class="spec-value">${systemInfo.memory?.total || '?'} GB</span>
+                        </div>
+                        ${systemInfo.gpu ? `
+                        <div class="spec-item">
+                            <span class="spec-label">GPU</span>
+                            <span class="spec-value">${systemInfo.gpu}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="software-section">
+                    <h4>Software (${activeApps}/${totalApps} active)</h4>
+                    <div class="software-list">
+                        ${Object.entries(apps).slice(0, 3).map(([name, app]) => `
+                            <div class="software-item ${getDaysInactive(app.lastUsed) > 7 ? 'inactive' : ''}">
+                                <span class="software-name">${name}</span>
+                                <span class="software-usage">${app.totalUsage || 0}m</span>
+                            </div>
+                        `).join('')}
+                        ${Object.keys(apps).length > 3 ? `
+                            <div class="software-more">+${Object.keys(apps).length - 3} more</div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="plugins-section">
+                    <h4>Plugins (${activePlugins}/${totalPlugins} active)</h4>
+                    <div class="plugin-list">
+                        ${getClientPluginsList(plugins).slice(0, 2).map(plugin => `
+                            <div class="plugin-item">
+                                <span class="plugin-name">${plugin.name}</span>
+                                <span class="plugin-vendor">${plugin.vendor}</span>
+                            </div>
+                        `).join('')}
+                        ${totalPlugins > 2 ? `
+                            <div class="plugin-more">+${totalPlugins - 2} more</div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="client-card-footer">
+                    <div class="monthly-cost">
+                        <span class="cost-label">Monthly Cost:</span>
+                        <span class="cost-value">$${monthlyCost}</span>
+                    </div>
+                    <button class="btn btn-primary btn-small" onclick="showEnterpriseClientDetails('${client.client_id}')">
+                        View Details
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Show detailed client information
+async function showEnterpriseClientDetails(clientId) {
+    const modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.innerHTML = `
+        <div class="modal-content modal-extra-large">
+            <div class="modal-header">
+                <h2>Client Details: ${clientId}</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="loading"><div class="loading-spinner"></div></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    try {
+        const serverUrl = state.usageData?.metadata?.enterpriseServer || 
+                         state.enterpriseConfig?.serverUrl || 
+                         'http://localhost:3443';
+        const apiKey = state.usageData?.metadata?.enterpriseApiKey || 
+                      state.enterpriseConfig?.apiKey || 
+                      'your-api-key';
+        
+        const response = await fetch(`${serverUrl}/api/clients/${clientId}`, {
+            headers: { 'X-API-Key': apiKey }
+        });
+        
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const data = await response.json();
+        
+        const modalBody = modal.querySelector('.modal-body');
+        modalBody.innerHTML = generateClientDetailsContent(data);
+        
+    } catch (error) {
+        modal.querySelector('.modal-body').innerHTML = `
+            <div class="empty-state">
+                <p>Failed to load client details</p>
+                <p class="text-small text-muted">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Generate detailed client information content
+function generateClientDetailsContent(data) {
+    const client = data.client;
+    const latestUsage = data.latestUsage || {};
+    const systemInfo = latestUsage.system_info || {};
+    const userInfo = systemInfo.user || {};
+    const apps = latestUsage.applications || {};
+    const plugins = latestUsage.plugins || {};
+    const history = data.history || [];
+    
+    return `
+        <div class="client-detail-tabs">
+            <button class="tab-btn active" onclick="switchClientTab(this, 'overview')">Overview</button>
+            <button class="tab-btn" onclick="switchClientTab(this, 'hardware')">Hardware</button>
+            <button class="tab-btn" onclick="switchClientTab(this, 'software')">Software</button>
+            <button class="tab-btn" onclick="switchClientTab(this, 'history')">History</button>
+        </div>
+        
+        <div class="tab-content active" id="overview-tab">
+            <div class="client-overview-grid">
+                <div class="detail-card">
+                    <h4>Client Information</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Hostname</span>
+                        <span class="detail-value highlight">${client.hostname}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Client ID</span>
+                        <span class="detail-value">${client.client_id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Department</span>
+                        <span class="detail-value">${client.department || 'Unknown'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Platform</span>
+                        <span class="detail-value">${client.platform}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">First Seen</span>
+                        <span class="detail-value">${formatDate(client.first_seen)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Last Update</span>
+                        <span class="detail-value">${formatTimeAgo(new Date(client.last_seen))}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-card">
+                    <h4>User Information</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Username</span>
+                        <span class="detail-value highlight">${userInfo.username || 'Unknown'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Home Directory</span>
+                        <span class="detail-value text-small">${userInfo.homedir || 'N/A'}</span>
+                    </div>
+                    ${systemInfo.ipAddresses && systemInfo.ipAddresses.length > 0 ? `
+                    <div class="detail-item">
+                        <span class="detail-label">IP Addresses</span>
+                        <div class="ip-list">
+                            ${systemInfo.ipAddresses.map(ip => `
+                                <span class="ip-badge">${ip.address} (${ip.interface})</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="detail-card">
+                    <h4>Usage Statistics</h4>
+                    <div class="quick-stats">
+                        <div class="quick-stat">
+                            <div class="stat-number">${Object.keys(apps).length}</div>
+                            <div class="stat-label">Applications</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-number">${countClientPlugins(plugins)}</div>
+                            <div class="stat-label">Plugins</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-number">$${calculateClientMonthlyCost({latest_usage: latestUsage})}</div>
+                            <div class="stat-label">Monthly Cost</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-number">${client.data_points || 0}</div>
+                            <div class="stat-label">Data Points</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="hardware-tab">
+            ${generateHardwareDetails(systemInfo)}
+        </div>
+        
+        <div class="tab-content" id="software-tab">
+            ${generateSoftwareDetails(apps, plugins)}
+        </div>
+        
+        <div class="tab-content" id="history-tab">
+            ${generateClientHistory(history)}
+        </div>
+    `;
+}
+
+// Generate hardware details section
+function generateHardwareDetails(systemInfo) {
+    if (!systemInfo) {
+        return '<div class="empty-state"><p>No hardware information available</p></div>';
+    }
+    
+    return `
+        <div class="hardware-details-grid">
+            <div class="detail-card">
+                <h4>System Information</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Hostname</span>
+                    <span class="detail-value">${systemInfo.hostname || 'Unknown'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Platform</span>
+                    <span class="detail-value">${systemInfo.platform} ${systemInfo.osVersion || ''}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Architecture</span>
+                    <span class="detail-value">${systemInfo.arch || 'Unknown'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Kernel</span>
+                    <span class="detail-value">${systemInfo.release || 'Unknown'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Uptime</span>
+                    <span class="detail-value">${systemInfo.uptimeDetailed || systemInfo.uptime + ' hours'}</span>
+                </div>
+            </div>
+            
+            <div class="detail-card">
+                <h4>CPU Information</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Model</span>
+                    <span class="detail-value">${systemInfo.cpus?.model || 'Unknown'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Cores</span>
+                    <span class="detail-value">${systemInfo.cpus?.cores || 'Unknown'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Speed</span>
+                    <span class="detail-value">${systemInfo.cpus?.speed ? (systemInfo.cpus.speed / 1000).toFixed(2) + ' GHz' : 'Unknown'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Usage</span>
+                    <span class="detail-value">${systemInfo.cpus?.usage || 0}%</span>
+                </div>
+            </div>
+            
+            <div class="detail-card">
+                <h4>Memory Information</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Total RAM</span>
+                    <span class="detail-value">${systemInfo.memory?.total || 0} GB</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Used RAM</span>
+                    <span class="detail-value">${systemInfo.memory?.used || 0} GB (${systemInfo.memory?.usagePercent || 0}%)</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Free RAM</span>
+                    <span class="detail-value">${systemInfo.memory?.free || 0} GB</span>
+                </div>
+                <div class="progress-container mt-2">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${systemInfo.memory?.usagePercent || 0}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            ${systemInfo.gpu ? `
+            <div class="detail-card">
+                <h4>Graphics Information</h4>
+                <div class="detail-item">
+                    <span class="detail-label">GPU</span>
+                    <span class="detail-value">${systemInfo.gpu}</span>
+                </div>
+            </div>
+            ` : ''}
+            
+            ${systemInfo.disks && systemInfo.disks.length > 0 ? `
+            <div class="detail-card full-width">
+                <h4>Storage Information</h4>
+                ${systemInfo.disks.map(disk => `
+                    <div class="disk-info">
+                        <div class="detail-item">
+                            <span class="detail-label">Drive ${disk.caption}</span>
+                            <span class="detail-value">${disk.free} GB free of ${disk.size} GB</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${((disk.size - disk.free) / disk.size * 100).toFixed(1)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Generate software details section
+function generateSoftwareDetails(apps, plugins) {
+    const appEntries = Object.entries(apps || {});
+    const pluginList = getClientPluginsList(plugins || {});
+    
+    return `
+        <div class="software-details">
+            <div class="software-section">
+                <h4>Installed Applications (${appEntries.length})</h4>
+                <div class="software-grid">
+                    ${appEntries.length > 0 ? appEntries.map(([name, app]) => {
+                        const isActive = app.lastUsed && getDaysInactive(app.lastUsed) <= 7;
+                        const cost = getEstimatedCost(name, 'application');
+                        
+                        return `
+                            <div class="software-card ${!isActive ? 'inactive' : ''}">
+                                <div class="software-header">
+                                    <div class="software-icon">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                        </svg>
+                                    </div>
+                                    <div class="software-title">
+                                        <h5>${name}</h5>
+                                        <span class="software-cost">$${cost}/mo</span>
+                                    </div>
+                                </div>
+                                <div class="software-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Total Usage</span>
+                                        <span class="stat-value">${app.totalUsage || 0} min</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Last Used</span>
+                                        <span class="stat-value">${formatDate(app.lastUsed)}</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Status</span>
+                                        <span class="stat-value ${isActive ? 'text-success' : 'text-danger'}">
+                                            ${isActive ? '● Active' : '● Inactive'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('') : '<p class="text-muted">No applications detected</p>'}
+                </div>
+            </div>
+            
+            <div class="software-section">
+                <h4>Installed Plugins (${pluginList.length})</h4>
+                <div class="software-grid">
+                    ${pluginList.length > 0 ? pluginList.map(plugin => {
+                        const isActive = plugin.lastUsed && getDaysInactive(plugin.lastUsed) <= 7;
+                        
+                        return `
+                            <div class="software-card plugin ${!isActive ? 'inactive' : ''}">
+                                <div class="software-header">
+                                    <div class="software-icon plugin">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="software-title">
+                                        <h5>${plugin.name}</h5>
+                                        <span class="vendor-badge">${plugin.vendor}</span>
+                                    </div>
+                                </div>
+                                <div class="software-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Total Usage</span>
+                                        <span class="stat-value">${plugin.totalUsage || 0} min</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Last Used</span>
+                                        <span class="stat-value">${formatDate(plugin.lastUsed)}</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Status</span>
+                                        <span class="stat-value ${isActive ? 'text-success' : 'text-danger'}">
+                                            ${isActive ? '● Active' : '● Inactive'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('') : '<p class="text-muted">No plugins detected</p>'}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Generate client history
+function generateClientHistory(history) {
+    if (!history || history.length === 0) {
+        return '<div class="empty-state"><p>No historical data available</p></div>';
+    }
+    
+    // Sort by timestamp descending
+    const sortedHistory = history.sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+    ).slice(0, 50);
+    
+    return `
+        <div class="history-timeline">
+            <h4>Activity Timeline (Last 50 Updates)</h4>
+            <div class="timeline-container">
+                ${sortedHistory.map(entry => {
+                    const apps = Object.keys(entry.applications || {}).length;
+                    const plugins = countClientPlugins(entry.plugins || {});
+                    const cpu = entry.system_info?.cpus?.usage || 0;
+                    const mem = entry.system_info?.memory?.usagePercent || 0;
+                    
+                    return `
+                        <div class="history-entry">
+                            <div class="history-time">
+                                <span class="time-primary">${formatDate(entry.timestamp)}</span>
+                                <span class="time-secondary">${formatTime(new Date(entry.timestamp))}</span>
+                            </div>
+                            <div class="history-content">
+                                <div class="history-stats">
+                                    <span class="stat-item">
+                                        <strong>${apps}</strong> apps
+                                    </span>
+                                    <span class="stat-item">
+                                        <strong>${plugins}</strong> plugins
+                                    </span>
+                                    <span class="stat-item">
+                                        CPU: <strong>${cpu}%</strong>
+                                    </span>
+                                    <span class="stat-item">
+                                        RAM: <strong>${mem}%</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Generate department breakdown
+function generateDepartmentBreakdown(clients) {
+    const departments = {};
+    
+    clients.forEach(client => {
+        const dept = client.department || 'Unknown';
+        if (!departments[dept]) {
+            departments[dept] = {
+                count: 0,
+                online: 0,
+                users: new Set(),
+                totalCost: 0
+            };
+        }
+        
+        departments[dept].count++;
+        if (isClientOnline(client.last_seen)) {
+            departments[dept].online++;
+        }
+        
+        const username = client.latest_usage?.system_info?.user?.username;
+        if (username) {
+            departments[dept].users.add(username);
+        }
+        
+        departments[dept].totalCost += calculateClientMonthlyCost(client);
+    });
+    
+    return Object.entries(departments).map(([name, data]) => `
+        <div class="department-card">
+            <h4>${name}</h4>
+            <div class="dept-stats">
+                <div class="dept-stat">
+                    <span class="stat-value">${data.count}</span>
+                    <span class="stat-label">Clients</span>
+                </div>
+                <div class="dept-stat">
+                    <span class="stat-value">${data.online}</span>
+                    <span class="stat-label">Online</span>
+                </div>
+                <div class="dept-stat">
+                    <span class="stat-value">${data.users.size}</span>
+                    <span class="stat-label">Users</span>
+                </div>
+                <div class="dept-stat">
+                    <span class="stat-value">$${data.totalCost.toFixed(0)}</span>
+                    <span class="stat-label">Cost/mo</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Helper functions for enterprise dashboard
+function isClientOnline(lastSeen) {
+    const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+    return new Date(lastSeen).getTime() > tenMinutesAgo;
+}
+
+function countTotalUniqueApplications(clients) {
+    const apps = new Set();
+    clients.forEach(client => {
+        if (client.latest_usage?.applications) {
+            Object.keys(client.latest_usage.applications).forEach(app => apps.add(app));
+        }
+    });
+    return apps.size;
+}
+
+function countTotalUniquePlugins(clients) {
+    const plugins = new Set();
+    clients.forEach(client => {
+        if (client.latest_usage?.plugins) {
+            Object.values(client.latest_usage.plugins).forEach(vendor => {
+                Object.keys(vendor).forEach(plugin => plugins.add(plugin));
+            });
+        }
+    });
+    return plugins.size;
+}
+
+function calculateTotalEnterpriseCost(clients) {
+    let total = 0;
+    clients.forEach(client => {
+        total += calculateClientMonthlyCost(client);
+    });
+    return total.toFixed(2);
+}
+
+function calculateClientMonthlyCost(client) {
+    let cost = 0;
+    const usage = client.latest_usage || {};
+    
+    // Calculate application costs
+    Object.entries(usage.applications || {}).forEach(([name, app]) => {
+        if (app.lastUsed && getDaysInactive(app.lastUsed) <= 30) {
+            cost += getEstimatedCost(name, 'application');
+        }
+    });
+    
+    // Calculate plugin costs
+    Object.values(usage.plugins || {}).forEach(vendor => {
+        Object.entries(vendor).forEach(([name, plugin]) => {
+            if (plugin.lastUsed && getDaysInactive(plugin.lastUsed) <= 30) {
+                cost += plugin.cost || 25;
+            }
+        });
+    });
+    
+    return cost;
+}
+
+function getClientPluginsList(plugins) {
+    const list = [];
+    Object.entries(plugins || {}).forEach(([vendor, vendorPlugins]) => {
+        Object.entries(vendorPlugins).forEach(([name, data]) => {
+            if (data.totalUsage !== undefined) {
+                list.push({
+                    name,
+                    vendor,
+                    ...data
+                });
+            }
+        });
+    });
+    return list;
+}
+
+function countClientPlugins(plugins) {
+    let count = 0;
+    Object.values(plugins || {}).forEach(vendor => {
+        Object.values(vendor).forEach(plugin => {
+            if (plugin.totalUsage !== undefined) count++;
+        });
+    });
+    return count;
+}
+
+// Filter functions
+function filterClientsByDepartment(dept) {
+    const cards = document.querySelectorAll('.client-card');
+    cards.forEach(card => {
+        if (!dept || card.dataset.department === dept) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function filterClientsByStatus(status) {
+    const cards = document.querySelectorAll('.client-card');
+    cards.forEach(card => {
+        if (!status || card.dataset.status === status) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function searchEnterpriseClients(query) {
+    const cards = document.querySelectorAll('.client-card');
+    const lowerQuery = query.toLowerCase();
+    
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(lowerQuery)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// View toggle functions
+function setEnterpriseView(view) {
+    const displayArea = document.getElementById('clientDisplayArea');
+    const viewButtons = document.querySelectorAll('.view-btn');
+    
+    viewButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.view-btn').classList.add('active');
+    
+    if (view === 'table') {
+        displayArea.className = 'client-table-view';
+        displayArea.innerHTML = generateClientTable(state.enterpriseClients || []);
+    } else {
+        displayArea.className = 'client-grid';
+        displayArea.innerHTML = generateClientCards(state.enterpriseClients || []);
+    }
+}
+
+// Generate table view
+function generateClientTable(clients) {
+    return `
+        <table class="data-table enhanced-table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Hostname</th>
+                    <th>User</th>
+                    <th>Department</th>
+                    <th>IP Address</th>
+                    <th>OS</th>
+                    <th>CPU/RAM</th>
+                    <th>Apps</th>
+                    <th>Plugins</th>
+                    <th>Cost/mo</th>
+                    <th>Last Seen</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${clients.map(client => {
+                    const latestUsage = client.latest_usage || {};
+                    const systemInfo = latestUsage.system_info || {};
+                    const userInfo = systemInfo.user || {};
+                    const isOnline = isClientOnline(client.last_seen);
+                    const apps = Object.keys(latestUsage.applications || {}).length;
+                    const plugins = countClientPlugins(latestUsage.plugins || {});
+                    const cost = calculateClientMonthlyCost(client);
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <span class="status-badge ${isOnline ? 'status-active' : 'status-inactive'}">
+                                    ${isOnline ? '● Online' : '● Offline'}
+                                </span>
+                            </td>
+                            <td><strong>${client.hostname}</strong></td>
+                            <td>${userInfo.username || 'Unknown'}</td>
+                            <td>${client.department || 'Unknown'}</td>
+                            <td>${systemInfo.ipAddresses?.[0]?.address || 'N/A'}</td>
+                            <td>${systemInfo.platform || 'Unknown'}</td>
+                            <td>${systemInfo.cpus?.cores || '?'}C / ${systemInfo.memory?.total || '?'}GB</td>
+                            <td>${apps}</td>
+                            <td>${plugins}</td>
+                            <td>$${cost}</td>
+                            <td>${formatTimeAgo(new Date(client.last_seen))}</td>
+                            <td>
+                                <button class="btn btn-secondary btn-small" onclick="showEnterpriseClientDetails('${client.client_id}')">
+                                    Details
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+// Tab switching for client details
+function switchClientTab(button, tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    button.classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+// Refresh enterprise dashboard
+async function refreshEnterpriseDashboard() {
+    showToast('Refreshing enterprise data...', 'info');
+    await showEnterpriseDashboard();
+}
+
+// Export enterprise report
+async function exportEnterpriseReport() {
+    try {
+        const serverUrl = state.usageData?.metadata?.enterpriseServer || 
+                         state.enterpriseConfig?.serverUrl || 
+                         'http://localhost:3443';
+        const apiKey = state.usageData?.metadata?.enterpriseApiKey || 
+                      state.enterpriseConfig?.apiKey || 
+                      'your-api-key';
+        
+        const response = await fetch(`${serverUrl}/api/export/full-report`, {
+            headers: { 'X-API-Key': apiKey }
+        });
+        
+        if (!response.ok) throw new Error('Failed to generate report');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `enterprise-report-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        
+        showToast('Report exported successfully', 'success');
+    } catch (error) {
+        showToast('Failed to export report: ' + error.message, 'error');
+    }
+}
+
+// ===== END OF ENTERPRISE DASHBOARD IMPLEMENTATION =====

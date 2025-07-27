@@ -1,0 +1,65 @@
+# client-installer/electron-builder.yml - Client Installer Build Configuration
+appId: com.enterprise.monitor.client.installer
+productName: Enterprise Monitor Client Setup
+directories:
+  output: ../dist-client
+  buildResources: build-resources
+
+files:
+  - "**/*"
+  - "!dist/**/*"
+
+extraFiles:
+  - from: ../enterprise-client/
+    to: client-build/
+    filter:
+      - "**/*"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+  icon: build-resources/client-icon.ico
+  requestedExecutionLevel: requireAdministrator
+
+nsis:
+  oneClick: true
+  perMachine: true
+  createDesktopShortcut: false
+  createStartMenuShortcut: false
+  installerIcon: build-resources/client-installer.ico
+  artifactName: enterprise-monitor-client-setup-${version}.${ext}
+  runAfterFinish: true
+  deleteAppDataOnUninstall: true
+
+mac:
+  category: public.app-category.utilities
+  icon: build-resources/client-icon.icns
+  target:
+    - target: pkg
+
+pkg:
+  installLocation: /Applications
+  allowAnywhere: false
+  allowCurrentUserHome: false
+  allowRootDirectory: false
+  background: build-resources/pkg-background.png
+  conclusion: build-resources/conclusion.html
+  license: LICENSE.txt
+  
+linux:
+  target:
+    - deb
+    - rpm
+  icon: build-resources/client-icon.png
+  category: System
+  
+deb:
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+  afterInstall: scripts/postinstall.sh
+  afterRemove: scripts/postremove.sh

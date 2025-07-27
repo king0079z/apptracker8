@@ -1,0 +1,335 @@
+// src/main/monitoring.js - Enhanced Monitoring Service
+const { EventEmitter } = require('events');
+const os = require('os');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
+class MonitoringService extends EventEmitter {
+  constructor() {
+    super();
+    this.monitoringInterval = null;
+    this.isMonitoring = false;
+    this.monitoredApps = [
+      'Adobe After Effects', 'Adobe Premiere Pro', 'Adobe Photoshop', 'Adobe Illustrator',
+      'Cinema 4D', 'Rhinoceros', '3ds Max', 'Autodesk Maya', 'DaVinci Resolve',
+      'Nuke', 'Houdini', 'Blender', 'Unity Editor', 'Unreal Engine', 'Substance Painter',
+      'ZBrush', 'Visual Studio Code', 'Sketch', 'Figma', 'AutoCAD', 'Final Cut Pro',
+      'Logic Pro', 'Ableton Live', 'Pro Tools', 'FL Studio', 'Cubase', 'Studio One'
+    ];
+    this.monitoredPlugins = [
+      'Trapcode', 'Magic Bullet', 'Universe', 'VFX', 'Keying Suite', 'Redshift',
+      'Sapphire', 'Continuum', 'Mocha Pro', 'RSMB', 'Twixtor', 'Optical Flares',
+      'Element 3D', 'X-Particles', 'Octane', 'Arnold', 'V-Ray', 'Corona', 'FumeFX',
+      'RealFlow', 'Phoenix FD', 'TurbulenceFD', 'Particular', 'Form', 'Mir', 'Plexus'
+    ];
+  }
+
+  start(interval = 60000) { // Default 1 minute
+    if (this.isMonitoring) {
+      console.log('Monitoring already running');
+      return false;
+    }
+
+    console.log('Starting monitoring service with interval:', interval);
+    this.isMonitoring = true;
+    
+    // Initial check
+    this.checkUsage();
+    
+    // Set up interval
+    this.monitoringInterval = setInterval(() => {
+      this.checkUsage();
+    }, interval);
+    
+    return true;
+  }
+
+  stop() {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = null;
+      this.isMonitoring = false;
+      console.log('Monitoring stopped');
+    }
+  }
+
+  async checkUsage() {
+    try {
+      const processes = await this.getRunningProcesses();
+      const timestamp = new Date().toISOString();
+      
+      // Detect applications and plugins
+      const detectedApps = new Map();
+      const detectedPlugins = new Map();
+      
+      processes.forEach(process => {
+        const processName = process.name.toLowerCase();
+        
+        // Check for monitored applications
+        this.monitoredApps.forEach(app => {
+          if (processName.includes(app.toLowerCase().replace(' ', ''))) {
+            detectedApps.set(app, {
+              processName: process.name,
+              detected: true,
+              timestamp
+            });
+          }
+        });
+        
+        // Check for plugins (simplified detection)
+        this.monitoredPlugins.forEach(plugin => {
+          if (processName.includes(plugin.toLowerCase())) {
+            detectedPlugins.set(plugin, {
+              processName: process.name,
+              detected: true,
+              timestamp
+            });
+          }
+        });
+      });
+      
+      // Get system info
+      const systemInfo = await this.getSystemInfo();
+      
+      // Emit the update with proper structure
+      const updateData = {
+        applications: detectedApps,
+        plugins: detectedPlugins,
+        timestamp,
+        allProcesses: processes,
+        systemInfo,
+        currentUser: os.userInfo().username
+      };
+      
+      console.log(`Monitoring update: ${detectedApps.size} apps, ${detectedPlugins.size} plugins detected`);
+      
+      this.emit('usage-update', updateData);
+      
+    } catch (error) {
+      console.error('Error during monitoring check:', error);
+    }
+  }
+
+  async getRunningProcesses() {
+    const platform = os.platform();
+    let command;
+    
+    if (platform === 'win32') {
+      command = 'wmic process get Name,ProcessId,ExecutablePath /format:csv';
+    } else if (platform === 'darwin') {
+      command = 'ps aux | awk \'{print $2 "|" $11}\'';
+    } else {
+      command = 'ps aux | awk \'{print $2 "|" $11}\'';
+    }
+    
+    try {
+      const { stdout } = await execPromise(command);
+      return this.parseProcessList(stdout, platform);
+    } catch (error) {
+      console.error('Error getting processes:', error);
+      return [];
+    }
+  }
+
+  parseProcessList(output, platform) {
+    const processes = [];
+    const lines = output.split('\n').filter(line => line.trim());
+    
+    if (platform === 'win32') {
+      // Skip header lines
+      lines.slice(2).forEach(line => {
+        const parts = line.split(',');
+        if (parts.length >= 4) {
+          const name = parts[2] || '';
+          const pid = parts[3] || '';
+          const path = parts[1] || '';
+          
+          if (name && name !== 'Name') {
+            processes.push({
+              name: name.trim(),
+              pid: pid.trim(),
+              path: path.trim(),
+              isMonitored: this.isMonitoredProcess(name)
+            });
+          }
+        }
+      });
+    } else {
+      // Unix-like systems
+      lines.forEach(line => {
+        const parts = line.split('|');
+        if (parts.length >= 2) {
+          const pid = parts[0].trim();
+          const name = parts[1].trim().split(' ')[0].split('/').pop();
+          
+          if (name && pid) {
+            processes.push({
+              name,
+              pid,
+              path: parts[1].trim(),
+              isMonitored: this.isMonitoredProcess(name)
+            });
+          }
+        }
+      });
+    }
+    
+    return processes;
+  }
+
+  isMonitoredProcess(processName) {
+    const name = processName.toLowerCase();
+    
+    // Check if it's a monitored application
+    const isApp = this.monitoredApps.some(app => 
+      name.includes(app.toLowerCase().replace(/\s+/g, ''))
+    );
+    
+    // Check if it's a monitored plugin
+    const isPlugin = this.monitoredPlugins.some(plugin => 
+      name.includes(plugin.toLowerCase())
+    );
+    
+    return isApp || isPlugin;
+  }
+
+  async getSystemInfo() {
+    const cpus = os.cpus();
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const usedMemory = totalMemory - freeMemory;
+    
+    // Get network interfaces
+    const networkInterfaces = os.networkInterfaces();
+    const ipAddresses = [];
+    
+    Object.entries(networkInterfaces).forEach(([name, interfaces]) => {
+      interfaces.forEach(iface => {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          ipAddresses.push({
+            interface: name,
+            address: iface.address,
+            mac: iface.mac
+          });
+        }
+      });
+    });
+    
+    // Get CPU usage (simplified)
+    const cpuUsage = this.getCPUUsage();
+    
+    // Get disk info (platform specific)
+    const disks = await this.getDiskInfo();
+    
+    // Format uptime
+    const uptimeHours = Math.floor(os.uptime() / 3600);
+    const uptimeMinutes = Math.floor((os.uptime() % 3600) / 60);
+    const uptimeDetailed = `${uptimeHours}h ${uptimeMinutes}m`;
+    
+    return {
+      hostname: os.hostname(),
+      platform: os.platform(),
+      arch: os.arch(),
+      osVersion: os.release(),
+      cpus: {
+        model: cpus[0].model,
+        cores: cpus.length,
+        speed: cpus[0].speed,
+        usage: cpuUsage
+      },
+      memory: {
+        total: (totalMemory / (1024 * 1024 * 1024)).toFixed(2),
+        used: (usedMemory / (1024 * 1024 * 1024)).toFixed(2),
+        free: (freeMemory / (1024 * 1024 * 1024)).toFixed(2),
+        usagePercent: ((usedMemory / totalMemory) * 100).toFixed(1)
+      },
+      uptime: uptimeHours,
+      uptimeDetailed,
+      ipAddresses,
+      user: os.userInfo(),
+      disks
+    };
+  }
+
+  getCPUUsage() {
+    const cpus = os.cpus();
+    let totalIdle = 0;
+    let totalTick = 0;
+    
+    cpus.forEach(cpu => {
+      for (type in cpu.times) {
+        totalTick += cpu.times[type];
+      }
+      totalIdle += cpu.times.idle;
+    });
+    
+    const idle = totalIdle / cpus.length;
+    const total = totalTick / cpus.length;
+    const usage = 100 - ~~(100 * idle / total);
+    
+    return usage;
+  }
+
+  async getDiskInfo() {
+    const platform = os.platform();
+    const disks = [];
+    
+    try {
+      if (platform === 'win32') {
+        const { stdout } = await execPromise('wmic logicaldisk get size,freespace,caption /format:csv');
+        const lines = stdout.split('\n').filter(line => line.trim());
+        
+        lines.slice(2).forEach(line => {
+          const parts = line.split(',');
+          if (parts.length >= 4) {
+            const caption = parts[1];
+            const freeSpace = parseInt(parts[2]) || 0;
+            const size = parseInt(parts[3]) || 0;
+            
+            if (caption && size > 0) {
+              disks.push({
+                caption,
+                size: (size / (1024 * 1024 * 1024)).toFixed(2),
+                free: (freeSpace / (1024 * 1024 * 1024)).toFixed(2),
+                used: ((size - freeSpace) / (1024 * 1024 * 1024)).toFixed(2)
+              });
+            }
+          }
+        });
+      } else if (platform === 'darwin') {
+        const { stdout } = await execPromise('df -h | grep "^/dev"');
+        const lines = stdout.split('\n').filter(line => line.trim());
+        
+        lines.forEach(line => {
+          const parts = line.split(/\s+/);
+          if (parts.length >= 6) {
+            disks.push({
+              caption: parts[0],
+              size: parts[1],
+              used: parts[2],
+              free: parts[3],
+              usePercent: parts[4]
+            });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error getting disk info:', error);
+    }
+    
+    return disks;
+  }
+
+  async getAllProcesses() {
+    try {
+      const processes = await this.getRunningProcesses();
+      return processes;
+    } catch (error) {
+      console.error('Error getting all processes:', error);
+      return [];
+    }
+  }
+}
+
+module.exports = MonitoringService;

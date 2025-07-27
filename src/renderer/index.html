@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Usage Monitor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                        <line x1="9" y1="15" x2="9.01" y2="15"></line>
+                        <line x1="15" y1="15" x2="15.01" y2="15"></line>
+                    </svg>
+                    <h1>Software Monitor</h1>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="startBtn" class="btn btn-success">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Start Monitoring
+                </button>
+                <button id="stopBtn" class="btn btn-danger" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="6" y="6" width="12" height="12"></rect>
+                    </svg>
+                    Stop Monitoring
+                </button>
+                <button id="exportBtn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export
+                </button>
+                <button id="costBtn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Edit Costs
+                </button>
+                <button id="systemInfoBtn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    System Info
+                </button>
+                <button id="settingsBtn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                    </svg>
+                    Settings
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav-section">
+                    <h2>Overview</h2>
+                    <div class="nav-item active" data-view="dashboard">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        Dashboard
+                    </div>
+                    <div class="nav-item" data-view="realtime">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                        Real-time Monitor
+                    </div>
+                    <div class="nav-item" data-view="monitoring">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                            <rect x="9" y="9" width="6" height="6"></rect>
+                        </svg>
+                        All Processes
+                    </div>
+                </nav>
+
+                <nav class="nav-section">
+                    <h2>Software</h2>
+                    <div class="nav-item" data-view="applications">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                        Applications
+                    </div>
+                    <div class="nav-item" data-view="plugins">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                            <line x1="16" y1="8" x2="2" y2="22"></line>
+                        </svg>
+                        Plugins
+                    </div>
+                    <div class="nav-item" data-view="vendors">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Vendors
+                    </div>
+                </nav>
+
+                <nav class="nav-section">
+                    <h2>Analytics</h2>
+                    <div class="nav-item" data-view="trends">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        Trends
+                    </div>
+                    <div class="nav-item" data-view="analytics">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        Analytics
+                    </div>
+                    <div class="nav-item" data-view="unused">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        Unused
+                    </div>
+                    <div class="nav-item" data-view="savings">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="13" rx="2" ry="2"></rect>
+                            <line x1="3" y1="8" x2="21" y2="8"></line>
+                            <line x1="12" y1="20" x2="12" y2="22"></line>
+                            <line x1="8" y1="20" x2="16" y2="20"></line>
+                        </svg>
+                        Savings Tracker
+                    </div>
+                    <div class="nav-item" data-view="reports">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        Reports
+                    </div>
+                </nav>
+
+                <nav class="nav-section">
+                    <h2>Enterprise</h2>
+                    <div class="nav-item" data-view="enterprise">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
+                        </svg>
+                        Enterprise Dashboard
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <main id="contentArea" class="content-area">
+                <!-- Dynamic content will be loaded here -->
+            </main>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="monitoring-status">
+                <div id="statusIndicator" class="status-indicator"></div>
+                <span id="statusText">Monitoring Stopped</span>
+            </div>
+            <div id="lastUpdate">Last update: Never</div>
+        </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="closeSettings" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Monitoring Settings</h3>
+                    <div class="setting-item">
+                        <label for="monitoringInterval">Monitoring Interval (ms)</label>
+                        <input type="number" id="monitoringInterval" class="form-control" min="10000" max="300000" step="1000">
+                    </div>
+                    <div class="setting-item">
+                        <label for="inactivityThreshold">Inactivity Threshold (days)</label>
+                        <input type="number" id="inactivityThreshold" class="form-control" min="1" max="365">
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="autoStart">
+                            Start monitoring on application launch
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Notifications</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="enableNotifications">
+                            Enable notifications
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="notifyUnused">
+                            Notify about unused software
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Export Settings</h3>
+                    <div class="setting-item">
+                        <label for="defaultFormat">Default Export Format</label>
+                        <select id="defaultFormat" class="form-control">
+                            <option value="csv">CSV</option>
+                            <option value="json">JSON</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelSettings" class="btn btn-secondary">Cancel</button>
+                <button id="saveSettings" class="btn btn-primary">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Export Data</h2>
+                <button id="closeExport" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Select the format for your export:</p>
+                <div class="export-options">
+                    <label class="export-option">
+                        <input type="radio" name="exportFormat" value="csv" checked>
+                        <div class="option-content">
+                            <h4>CSV Format</h4>
+                            <p>Best for spreadsheet applications like Excel</p>
+                        </div>
+                    </label>
+                    <label class="export-option">
+                        <input type="radio" name="exportFormat" value="json">
+                        <div class="option-content">
+                            <h4>JSON Format</h4>
+                            <p>Best for data analysis and integration</p>
+                        </div>
+                    </label>
+                    <label class="export-option">
+                        <input type="radio" name="exportFormat" value="pdf">
+                        <div class="option-content">
+                            <h4>PDF Report</h4>
+                            <p>Formatted report for sharing and printing</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelExport" class="btn btn-secondary">Cancel</button>
+                <button id="confirmExport" class="btn btn-primary">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Info Modal -->
+    <div id="systemInfoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>System Information</h2>
+                <button id="closeSystemInfo" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="systemInfoContent">
+                    <!-- System info will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="refreshSystemInfo" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <button id="closeSystemInfoBtn" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Savings Confirmation Modal -->
+    <div id="savingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Savings</h2>
+                <button id="closeSavings" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="savings-confirmation">
+                    <p id="savingsMessage"></p>
+                    <div class="savings-amount">
+                        <h3>Monthly Saving</h3>
+                        <div class="amount" id="savingsAmount">$0</div>
+                    </div>
+                    <p>Have you removed this software from your system?</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelSavings" class="btn btn-secondary">Not Yet</button>
+                <button id="confirmSavings" class="btn btn-success">Yes, Confirm Removal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Cost Editor Modal -->
+    <div id="costEditorModal" class="modal cost-editor-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Software Costs</h2>
+                <button id="closeCostEditor" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="applications">Applications</button>
+                    <button class="tab-button" data-tab="plugins">Plugins</button>
+                </div>
+                
+                <div class="cost-editor-search">
+                    <input type="text" id="costSearchBox" class="search-box" placeholder="Search software..." />
+                </div>
+                
+                <div id="costChangeSummary" class="cost-editor-summary">
+                    <div class="change-summary">No changes made</div>
+                </div>
+                
+                <div id="costEditorList" class="cost-editor-list">
+                    <!-- Cost items will be loaded here -->
+                </div>
+                
+                <div class="cost-editor-footer">
+                    <div class="total-cost">
+                        Total Monthly Cost: <span id="totalMonthlyCost">$0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelCostEditor" class="btn btn-secondary">Cancel</button>
+                <button id="saveCostEditor" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div id="toastMessage" class="toast-content"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="renderer.js"></script>
+</body>
+</html>

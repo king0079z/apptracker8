@@ -1,0 +1,930 @@
+// Enhanced Enterprise Dashboard for renderer.js
+// Replace the existing showEnterpriseDashboard() function with this comprehensive version
+
+// View: Enterprise Dashboard - Complete Network Monitoring
+async function showEnterpriseDashboard() {
+    const contentArea = document.getElementById('contentArea');
+    
+    // Show loading state
+    contentArea.innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
+    
+    try {
+        // Get sync status
+        const syncStatus = await window.electronAPI.getSyncStatus();
+        
+        // Mock enterprise data - In production, this would come from the enterprise server
+        const enterpriseData = generateMockEnterpriseData();
+        
+        contentArea.innerHTML = `
+            <div class="enterprise-header">
+                <div>
+                    <h2>Enterprise Dashboard</h2>
+                    <p>Network-wide software monitoring and management</p>
+                </div>
+                <div class="sync-status">
+                    <div class="sync-indicator ${syncStatus.isOnline ? 'active' : ''}"></div>
+                    <span>${syncStatus.isOnline ? 'Server Connected' : 'Server Offline'} - ${syncStatus.message || 'No sync configured'}</span>
+                    ${syncStatus.isOnline ? `<button class="btn btn-small btn-secondary" onclick="refreshEnterpriseDashboard()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                        Refresh
+                    </button>` : ''}
+                </div>
+            </div>
+            
+            ${!syncStatus.isOnline ? `
+                <div class="data-section">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        <h3>Enterprise Server Not Connected</h3>
+                        <p>To use enterprise features, configure the enterprise server connection in settings.</p>
+                        <p class="text-small text-muted mt-2">Contact your IT administrator for server details.</p>
+                    </div>
+                </div>
+            ` : `
+                <!-- Enterprise Summary Cards -->
+                <div class="enterprise-summary">
+                    <div class="summary-card">
+                        <div class="card-icon">🖥️</div>
+                        <div class="card-content">
+                            <div class="card-value">${enterpriseData.totalClients}</div>
+                            <div class="card-label">Total Clients</div>
+                            <div class="card-sub">${enterpriseData.activeClients} online</div>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="card-icon">👥</div>
+                        <div class="card-content">
+                            <div class="card-value">${enterpriseData.totalUsers}</div>
+                            <div class="card-label">Active Users</div>
+                            <div class="card-sub">${enterpriseData.departments.length} departments</div>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-content">
+                            <div class="card-value">${enterpriseData.totalSoftware}</div>
+                            <div class="card-label">Software Licenses</div>
+                            <div class="card-sub">${enterpriseData.activeSoftware} in use</div>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="card-icon">💰</div>
+                        <div class="card-content">
+                            <div class="card-value">$${enterpriseData.totalCost}</div>
+                            <div class="card-label">Monthly Cost</div>
+                            <div class="card-sub">$${enterpriseData.costPerUser}/user</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Department Overview -->
+                <div class="department-section">
+                    <h3>Department Overview</h3>
+                    <div class="department-grid">
+                        ${enterpriseData.departments.map(dept => `
+                            <div class="department-card">
+                                <h4>${dept.name}</h4>
+                                <div class="dept-stats">
+                                    <div class="dept-stat">
+                                        <span class="stat-value">${dept.users}</span>
+                                        <span class="stat-label">Users</span>
+                                    </div>
+                                    <div class="dept-stat">
+                                        <span class="stat-value">${dept.computers}</span>
+                                        <span class="stat-label">Computers</span>
+                                    </div>
+                                    <div class="dept-stat">
+                                        <span class="stat-value">$${dept.monthlyCost}</span>
+                                        <span class="stat-label">Monthly</span>
+                                    </div>
+                                    <div class="dept-stat">
+                                        <span class="stat-value">${dept.utilizationRate}%</span>
+                                        <span class="stat-label">Utilization</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- Client Computers Section -->
+                <div class="data-section">
+                    <div class="section-header">
+                        <h3>Network Computers (${enterpriseData.clients.length})</h3>
+                        <div class="filter-section">
+                            <select id="departmentFilter" onchange="filterEnterpriseClients()">
+                                <option value="">All Departments</option>
+                                ${enterpriseData.departments.map(dept => 
+                                    `<option value="${dept.name}">${dept.name}</option>`
+                                ).join('')}
+                            </select>
+                            <select id="statusFilter" onchange="filterEnterpriseClients()">
+                                <option value="">All Status</option>
+                                <option value="online">Online</option>
+                                <option value="offline">Offline</option>
+                            </select>
+                            <input type="text" class="search-input" id="clientSearch" placeholder="Search computers or users..." onkeyup="filterEnterpriseClients()">
+                            <div class="view-toggle">
+                                <button class="view-btn active" onclick="setEnterpriseView('grid')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="7" height="7"></rect>
+                                        <rect x="14" y="3" width="7" height="7"></rect>
+                                        <rect x="14" y="14" width="7" height="7"></rect>
+                                        <rect x="3" y="14" width="7" height="7"></rect>
+                                    </svg>
+                                </button>
+                                <button class="view-btn" onclick="setEnterpriseView('table')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 3h18v18H3zM21 9H3M21 15H3M12 3v18"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Client Grid View -->
+                    <div id="clientGridView" class="client-grid">
+                        ${enterpriseData.clients.map(client => createEnterpriseClientCard(client)).join('')}
+                    </div>
+                    
+                    <!-- Client Table View (hidden by default) -->
+                    <div id="clientTableView" class="client-table-view" style="display: none;">
+                        <table class="data-table enhanced-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Computer Name</th>
+                                    <th>User</th>
+                                    <th>Department</th>
+                                    <th>IP Address</th>
+                                    <th>OS</th>
+                                    <th>Active Apps</th>
+                                    <th>Active Plugins</th>
+                                    <th>Monthly Cost</th>
+                                    <th>Last Seen</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${enterpriseData.clients.map(client => createEnterpriseClientRow(client)).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `}
+        `;
+        
+    } catch (error) {
+        console.error('Error loading enterprise dashboard:', error);
+        contentArea.innerHTML = `
+            <div class="enterprise-header">
+                <h2>Enterprise Dashboard</h2>
+                <p>Network-wide software monitoring and management</p>
+            </div>
+            
+            <div class="data-section">
+                <div class="empty-state">
+                    <h3>Error Loading Dashboard</h3>
+                    <p>${error.message || 'Failed to load enterprise data'}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Generate mock enterprise data for demonstration
+function generateMockEnterpriseData() {
+    const departments = [
+        { name: 'Design', users: 24, computers: 28, monthlyCost: 4580, utilizationRate: 87 },
+        { name: 'Development', users: 45, computers: 48, monthlyCost: 8920, utilizationRate: 92 },
+        { name: 'Marketing', users: 18, computers: 20, monthlyCost: 2340, utilizationRate: 72 },
+        { name: 'Finance', users: 12, computers: 12, monthlyCost: 1450, utilizationRate: 95 },
+        { name: 'HR', users: 8, computers: 10, monthlyCost: 980, utilizationRate: 68 }
+    ];
+    
+    const clients = [
+        {
+            id: 'PC-DESIGN-001',
+            hostname: 'DESIGN-WS-001',
+            user: 'Sarah Johnson',
+            department: 'Design',
+            status: 'online',
+            lastSeen: new Date(),
+            ipAddress: '192.168.1.101',
+            os: 'Windows 11 Pro',
+            osVersion: '23H2',
+            cpu: 'Intel Core i9-13900K',
+            ram: '64GB',
+            gpu: 'NVIDIA RTX 4090',
+            applications: [
+                { name: 'Adobe After Effects', usage: 4320, lastUsed: new Date() },
+                { name: 'Adobe Photoshop', usage: 3210, lastUsed: new Date(Date.now() - 3600000) },
+                { name: 'Cinema 4D', usage: 2890, lastUsed: new Date(Date.now() - 7200000) }
+            ],
+            plugins: [
+                { name: 'Trapcode Suite', vendor: 'Maxon', usage: 1230 },
+                { name: 'Sapphire', vendor: 'borisfx', usage: 890 }
+            ],
+            monthlyCost: 380
+        },
+        {
+            id: 'PC-DEV-001',
+            hostname: 'DEV-WS-001',
+            user: 'Michael Chen',
+            department: 'Development',
+            status: 'online',
+            lastSeen: new Date(),
+            ipAddress: '192.168.1.201',
+            os: 'macOS',
+            osVersion: 'Sonoma 14.2',
+            cpu: 'Apple M3 Max',
+            ram: '96GB',
+            gpu: 'Integrated',
+            applications: [
+                { name: 'Visual Studio Code', usage: 8640, lastUsed: new Date() },
+                { name: 'Unity Editor', usage: 4320, lastUsed: new Date() },
+                { name: 'Blender', usage: 1440, lastUsed: new Date(Date.now() - 86400000) }
+            ],
+            plugins: [
+                { name: 'X-Particles', vendor: 'insydium.ltd', usage: 560 }
+            ],
+            monthlyCost: 290
+        },
+        {
+            id: 'PC-DESIGN-002',
+            hostname: 'DESIGN-WS-002',
+            user: 'Emma Wilson',
+            department: 'Design',
+            status: 'offline',
+            lastSeen: new Date(Date.now() - 7200000),
+            ipAddress: '192.168.1.102',
+            os: 'Windows 11 Pro',
+            osVersion: '23H2',
+            cpu: 'Intel Core i7-13700K',
+            ram: '32GB',
+            gpu: 'NVIDIA RTX 4070 Ti',
+            applications: [
+                { name: 'Adobe Illustrator', usage: 5760, lastUsed: new Date(Date.now() - 7200000) },
+                { name: 'Adobe Photoshop', usage: 4320, lastUsed: new Date(Date.now() - 7200000) }
+            ],
+            plugins: [
+                { name: 'Magic Bullet', vendor: 'Maxon', usage: 340 }
+            ],
+            monthlyCost: 220
+        },
+        {
+            id: 'PC-MKT-001',
+            hostname: 'MKT-WS-001',
+            user: 'David Martinez',
+            department: 'Marketing',
+            status: 'online',
+            lastSeen: new Date(),
+            ipAddress: '192.168.1.301',
+            os: 'Windows 10 Pro',
+            osVersion: '22H2',
+            cpu: 'Intel Core i5-12600K',
+            ram: '16GB',
+            gpu: 'Intel UHD Graphics 770',
+            applications: [
+                { name: 'Adobe Photoshop', usage: 2880, lastUsed: new Date() },
+                { name: 'Microsoft PowerPoint', usage: 1440, lastUsed: new Date() }
+            ],
+            plugins: [],
+            monthlyCost: 85
+        },
+        {
+            id: 'PC-FIN-001',
+            hostname: 'FIN-WS-001',
+            user: 'Lisa Anderson',
+            department: 'Finance',
+            status: 'online',
+            lastSeen: new Date(),
+            ipAddress: '192.168.1.401',
+            os: 'Windows 10 Pro',
+            osVersion: '22H2',
+            cpu: 'Intel Core i5-11400',
+            ram: '16GB',
+            gpu: 'Intel UHD Graphics 730',
+            applications: [
+                { name: 'Microsoft Excel', usage: 6480, lastUsed: new Date() },
+                { name: 'Microsoft Word', usage: 2160, lastUsed: new Date() }
+            ],
+            plugins: [],
+            monthlyCost: 50
+        }
+    ];
+    
+    // Add more mock clients
+    for (let i = 0; i < 15; i++) {
+        const dept = departments[Math.floor(Math.random() * departments.length)];
+        const isOnline = Math.random() > 0.2;
+        clients.push({
+            id: `PC-${dept.name.toUpperCase()}-${String(i + 10).padStart(3, '0')}`,
+            hostname: `${dept.name.toUpperCase()}-WS-${String(i + 10).padStart(3, '0')}`,
+            user: generateRandomName(),
+            department: dept.name,
+            status: isOnline ? 'online' : 'offline',
+            lastSeen: isOnline ? new Date() : new Date(Date.now() - Math.random() * 86400000),
+            ipAddress: `192.168.${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 200) + 50}`,
+            os: Math.random() > 0.5 ? 'Windows 11 Pro' : 'Windows 10 Pro',
+            osVersion: '22H2',
+            cpu: getRandomCPU(),
+            ram: getRandomRAM(),
+            gpu: getRandomGPU(),
+            applications: generateRandomApps(),
+            plugins: generateRandomPlugins(),
+            monthlyCost: Math.floor(Math.random() * 300) + 50
+        });
+    }
+    
+    const totalClients = clients.length;
+    const activeClients = clients.filter(c => c.status === 'online').length;
+    const totalUsers = new Set(clients.map(c => c.user)).size;
+    const totalSoftware = new Set(clients.flatMap(c => c.applications.map(a => a.name))).size;
+    const activeSoftware = new Set(clients.filter(c => c.status === 'online').flatMap(c => c.applications.map(a => a.name))).size;
+    const totalCost = clients.reduce((sum, c) => sum + c.monthlyCost, 0);
+    const costPerUser = Math.round(totalCost / totalUsers);
+    
+    return {
+        totalClients,
+        activeClients,
+        totalUsers,
+        departments,
+        totalSoftware,
+        activeSoftware,
+        totalCost: totalCost.toFixed(2),
+        costPerUser,
+        clients
+    };
+}
+
+// Create client card for grid view
+function createEnterpriseClientCard(client) {
+    const isOnline = client.status === 'online';
+    const timeSince = formatTimeAgo(client.lastSeen);
+    
+    return `
+        <div class="client-card ${isOnline ? 'online' : 'offline'}" data-department="${client.department}" data-status="${client.status}" data-search="${client.hostname} ${client.user}">
+            <div class="client-card-header">
+                <div class="client-status ${isOnline ? 'online' : 'offline'}"></div>
+                <h3>${client.hostname}</h3>
+                <span class="client-id">${client.id}</span>
+            </div>
+            
+            <div class="client-info-section">
+                <div class="info-row">
+                    <span class="info-icon">👤</span>
+                    <span class="info-label">User:</span>
+                    <span class="info-value">${client.user}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-icon">🏢</span>
+                    <span class="info-label">Dept:</span>
+                    <span class="info-value">${client.department}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-icon">🌐</span>
+                    <span class="info-label">IP:</span>
+                    <span class="info-value">${client.ipAddress}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-icon">⏱️</span>
+                    <span class="info-label">Last:</span>
+                    <span class="info-value">${isOnline ? 'Online now' : timeSince}</span>
+                </div>
+            </div>
+            
+            <div class="system-specs">
+                <h4>System Specifications</h4>
+                <div class="spec-grid">
+                    <div class="spec-item">
+                        <span class="spec-label">OS</span>
+                        <span class="spec-value">${client.os}</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">CPU</span>
+                        <span class="spec-value" title="${client.cpu}">${client.cpu.length > 20 ? client.cpu.substring(0, 20) + '...' : client.cpu}</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">RAM</span>
+                        <span class="spec-value">${client.ram}</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">GPU</span>
+                        <span class="spec-value" title="${client.gpu}">${client.gpu.length > 20 ? client.gpu.substring(0, 20) + '...' : client.gpu}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="software-section">
+                <h4>Active Software (${client.applications.length})</h4>
+                <div class="software-list">
+                    ${client.applications.slice(0, 3).map(app => `
+                        <div class="software-item ${getDaysInactive(app.lastUsed) > 7 ? 'inactive' : ''}">
+                            <span class="software-name">${app.name}</span>
+                            <span class="software-usage">${Math.round(app.usage / 60)}h</span>
+                        </div>
+                    `).join('')}
+                    ${client.applications.length > 3 ? `
+                        <div class="software-more">+${client.applications.length - 3} more applications</div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            ${client.plugins.length > 0 ? `
+                <div class="plugins-section">
+                    <h4>Active Plugins (${client.plugins.length})</h4>
+                    <div class="plugin-list">
+                        ${client.plugins.slice(0, 2).map(plugin => `
+                            <div class="plugin-item">
+                                <span class="plugin-name">${plugin.name}</span>
+                                <span class="plugin-vendor">${plugin.vendor}</span>
+                            </div>
+                        `).join('')}
+                        ${client.plugins.length > 2 ? `
+                            <div class="plugin-more">+${client.plugins.length - 2} more plugins</div>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="client-card-footer">
+                <div class="monthly-cost">
+                    <span class="cost-label">Monthly Cost</span>
+                    <span class="cost-value">$${client.monthlyCost}</span>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="showClientDetails('${client.id}')">
+                    View Details
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Create client row for table view
+function createEnterpriseClientRow(client) {
+    const isOnline = client.status === 'online';
+    const timeSince = formatTimeAgo(client.lastSeen);
+    
+    return `
+        <tr data-department="${client.department}" data-status="${client.status}" data-search="${client.hostname} ${client.user}">
+            <td>
+                <span class="status-badge status-${isOnline ? 'active' : 'inactive'}">
+                    ${isOnline ? 'Online' : 'Offline'}
+                </span>
+            </td>
+            <td><strong>${client.hostname}</strong></td>
+            <td>${client.user}</td>
+            <td>${client.department}</td>
+            <td class="text-small">${client.ipAddress}</td>
+            <td>${client.os}</td>
+            <td>${client.applications.length}</td>
+            <td>${client.plugins.length}</td>
+            <td>$${client.monthlyCost}</td>
+            <td>${isOnline ? 'Now' : timeSince}</td>
+            <td>
+                <button class="btn btn-secondary btn-small" onclick="showClientDetails('${client.id}')">Details</button>
+            </td>
+        </tr>
+    `;
+}
+
+// Helper functions for enterprise dashboard
+function filterEnterpriseClients() {
+    const department = document.getElementById('departmentFilter').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const search = document.getElementById('clientSearch').value.toLowerCase();
+    
+    // Filter grid view
+    document.querySelectorAll('.client-card').forEach(card => {
+        const matchDept = !department || card.dataset.department.toLowerCase() === department;
+        const matchStatus = !status || card.dataset.status === status;
+        const matchSearch = !search || card.dataset.search.toLowerCase().includes(search);
+        
+        card.style.display = matchDept && matchStatus && matchSearch ? '' : 'none';
+    });
+    
+    // Filter table view
+    document.querySelectorAll('#clientTableView tbody tr').forEach(row => {
+        const matchDept = !department || row.dataset.department.toLowerCase() === department;
+        const matchStatus = !status || row.dataset.status === status;
+        const matchSearch = !search || row.dataset.search.toLowerCase().includes(search);
+        
+        row.style.display = matchDept && matchStatus && matchSearch ? '' : 'none';
+    });
+}
+
+function setEnterpriseView(view) {
+    const gridView = document.getElementById('clientGridView');
+    const tableView = document.getElementById('clientTableView');
+    const gridBtn = document.querySelector('.view-btn[onclick*="grid"]');
+    const tableBtn = document.querySelector('.view-btn[onclick*="table"]');
+    
+    if (view === 'grid') {
+        gridView.style.display = 'grid';
+        tableView.style.display = 'none';
+        gridBtn.classList.add('active');
+        tableBtn.classList.remove('active');
+    } else {
+        gridView.style.display = 'none';
+        tableView.style.display = 'block';
+        gridBtn.classList.remove('active');
+        tableBtn.classList.add('active');
+    }
+}
+
+function refreshEnterpriseDashboard() {
+    showEnterpriseDashboard();
+}
+
+// Show detailed client information
+function showClientDetails(clientId) {
+    // In a real implementation, this would fetch detailed data from the server
+    const modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.innerHTML = `
+        <div class="modal-content modal-extra-large">
+            <div class="modal-header">
+                <h2>Client Details - ${clientId}</h2>
+                <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="client-detail-tabs">
+                    <button class="tab-btn active" onclick="showClientTab(this, 'overview')">Overview</button>
+                    <button class="tab-btn" onclick="showClientTab(this, 'hardware')">Hardware</button>
+                    <button class="tab-btn" onclick="showClientTab(this, 'software')">Software & Plugins</button>
+                    <button class="tab-btn" onclick="showClientTab(this, 'history')">Usage History</button>
+                </div>
+                
+                <div id="overview-tab" class="tab-content active">
+                    <div class="client-overview-grid">
+                        <div class="detail-card">
+                            <h4>System Information</h4>
+                            <div class="detail-item">
+                                <span class="detail-label">Computer Name</span>
+                                <span class="detail-value">${clientId}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Current User</span>
+                                <span class="detail-value">Sample User</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Department</span>
+                                <span class="detail-value">Design</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Last Login</span>
+                                <span class="detail-value">${formatTime(new Date())}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <h4>Usage Statistics</h4>
+                            <div class="quick-stats">
+                                <div class="quick-stat">
+                                    <div class="stat-number">156</div>
+                                    <div class="stat-label">Hours This Month</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="stat-number">12</div>
+                                    <div class="stat-label">Active Apps</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="stat-number">8</div>
+                                    <div class="stat-label">Active Plugins</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="stat-number">$380</div>
+                                    <div class="stat-label">Monthly Cost</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="hardware-tab" class="tab-content" style="display: none;">
+                    <div class="hardware-details-grid">
+                        <div class="detail-card">
+                            <h4>Processor & Memory</h4>
+                            <div class="detail-item">
+                                <span class="detail-label">CPU Model</span>
+                                <span class="detail-value">Intel Core i9-13900K</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">CPU Cores</span>
+                                <span class="detail-value">24 cores @ 3.0 GHz</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Total RAM</span>
+                                <span class="detail-value">64 GB DDR5</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Memory Usage</span>
+                                <span class="detail-value">42.3 GB (66%)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <h4>Graphics & Display</h4>
+                            <div class="detail-item">
+                                <span class="detail-label">GPU Model</span>
+                                <span class="detail-value">NVIDIA RTX 4090</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">VRAM</span>
+                                <span class="detail-value">24 GB GDDR6X</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Displays</span>
+                                <span class="detail-value">2 monitors (4K + 2K)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card full-width">
+                            <h4>Storage</h4>
+                            <div class="disk-info">
+                                <div class="detail-item">
+                                    <span class="detail-label">C: System Drive</span>
+                                    <span class="detail-value">512 GB SSD (127 GB free)</span>
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 75%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="disk-info">
+                                <div class="detail-item">
+                                    <span class="detail-label">D: Data Drive</span>
+                                    <span class="detail-value">2 TB SSD (843 GB free)</span>
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 58%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="software-tab" class="tab-content" style="display: none;">
+                    <div class="software-details">
+                        <div class="software-section">
+                            <h4>Installed Applications</h4>
+                            <div class="software-grid">
+                                ${generateDetailedSoftwareList()}
+                            </div>
+                        </div>
+                        
+                        <div class="software-section">
+                            <h4>Active Plugins</h4>
+                            <div class="software-grid">
+                                ${generateDetailedPluginList()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="history-tab" class="tab-content" style="display: none;">
+                    <div class="history-timeline">
+                        <h4>Usage History - Last 7 Days</h4>
+                        <div class="timeline-container">
+                            ${generateUsageHistory()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="exportClientReport('${clientId}')">Export Report</button>
+                <button class="btn btn-primary" onclick="this.closest('.modal').remove()">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function showClientTab(btn, tabName) {
+    // Update button states
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Show/hide tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    document.getElementById(`${tabName}-tab`).style.display = 'block';
+}
+
+// Helper functions for generating mock data
+function generateRandomName() {
+    const firstNames = ['John', 'Jane', 'Michael', 'Sarah', 'David', 'Emma', 'Robert', 'Lisa', 'James', 'Mary'];
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+    return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+}
+
+function getRandomCPU() {
+    const cpus = [
+        'Intel Core i9-13900K', 'Intel Core i7-13700K', 'Intel Core i5-13600K',
+        'AMD Ryzen 9 7950X', 'AMD Ryzen 7 7700X', 'AMD Ryzen 5 7600X',
+        'Intel Core i5-12600K', 'Intel Core i5-11400', 'Apple M3 Pro', 'Apple M2'
+    ];
+    return cpus[Math.floor(Math.random() * cpus.length)];
+}
+
+function getRandomRAM() {
+    const rams = ['8GB', '16GB', '32GB', '64GB', '128GB'];
+    return rams[Math.floor(Math.random() * rams.length)];
+}
+
+function getRandomGPU() {
+    const gpus = [
+        'NVIDIA RTX 4090', 'NVIDIA RTX 4080', 'NVIDIA RTX 4070 Ti', 'NVIDIA RTX 4060',
+        'AMD Radeon RX 7900 XTX', 'Intel UHD Graphics 770', 'Apple GPU', 'Integrated Graphics'
+    ];
+    return gpus[Math.floor(Math.random() * gpus.length)];
+}
+
+function generateRandomApps() {
+    const allApps = [
+        'Adobe After Effects', 'Adobe Premiere Pro', 'Adobe Photoshop', 'Adobe Illustrator',
+        'Cinema 4D', 'Blender', 'Unity Editor', 'Visual Studio Code', 'Microsoft Excel',
+        'Microsoft Word', 'Microsoft PowerPoint', 'Slack', 'Chrome', 'Firefox'
+    ];
+    
+    const numApps = Math.floor(Math.random() * 5) + 2;
+    const apps = [];
+    
+    for (let i = 0; i < numApps; i++) {
+        const app = allApps[Math.floor(Math.random() * allApps.length)];
+        if (!apps.find(a => a.name === app)) {
+            apps.push({
+                name: app,
+                usage: Math.floor(Math.random() * 8000) + 500,
+                lastUsed: new Date(Date.now() - Math.random() * 86400000)
+            });
+        }
+    }
+    
+    return apps;
+}
+
+function generateRandomPlugins() {
+    const allPlugins = [
+        { name: 'Trapcode Suite', vendor: 'Maxon' },
+        { name: 'Sapphire', vendor: 'borisfx' },
+        { name: 'Magic Bullet', vendor: 'Maxon' },
+        { name: 'X-Particles', vendor: 'insydium.ltd' },
+        { name: 'Neat Video', vendor: 'Neat Video' },
+        { name: 'Mocha Pro', vendor: 'borisfx' }
+    ];
+    
+    const numPlugins = Math.floor(Math.random() * 4);
+    const plugins = [];
+    
+    for (let i = 0; i < numPlugins; i++) {
+        const plugin = allPlugins[Math.floor(Math.random() * allPlugins.length)];
+        if (!plugins.find(p => p.name === plugin.name)) {
+            plugins.push({
+                ...plugin,
+                usage: Math.floor(Math.random() * 2000) + 100
+            });
+        }
+    }
+    
+    return plugins;
+}
+
+function generateDetailedSoftwareList() {
+    const software = [
+        { name: 'Adobe After Effects', vendor: 'Adobe', version: '2024.2', usage: 4320, cost: 55, lastUsed: new Date() },
+        { name: 'Adobe Photoshop', vendor: 'Adobe', version: '2024.1', usage: 3210, cost: 35, lastUsed: new Date(Date.now() - 3600000) },
+        { name: 'Cinema 4D', vendor: 'Maxon', version: 'R2024', usage: 2890, cost: 94, lastUsed: new Date(Date.now() - 7200000) },
+        { name: 'Microsoft Office', vendor: 'Microsoft', version: '365', usage: 1440, cost: 12, lastUsed: new Date() }
+    ];
+    
+    return software.map(app => `
+        <div class="software-card ${getDaysInactive(app.lastUsed) > 7 ? 'inactive' : ''}">
+            <div class="software-header">
+                <div class="software-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                </div>
+                <div class="software-title">
+                    <h5>${app.name}</h5>
+                    <span class="software-cost">$${app.cost}/mo</span>
+                </div>
+            </div>
+            <div class="vendor-badge">${app.vendor} • v${app.version}</div>
+            <div class="software-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Usage</span>
+                    <span class="stat-value">${Math.round(app.usage / 60)}h</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Used</span>
+                    <span class="stat-value">${formatTimeAgo(app.lastUsed)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value ${getDaysInactive(app.lastUsed) <= 1 ? 'text-success' : 'text-danger'}">
+                        ${getDaysInactive(app.lastUsed) <= 1 ? 'Active' : 'Inactive'}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function generateDetailedPluginList() {
+    const plugins = [
+        { name: 'Trapcode Suite', vendor: 'Maxon', usage: 1230, cost: 89 },
+        { name: 'Sapphire', vendor: 'borisfx', usage: 890, cost: 195 },
+        { name: 'Magic Bullet', vendor: 'Maxon', usage: 560, cost: 89 },
+        { name: 'X-Particles', vendor: 'insydium.ltd', usage: 340, cost: 69 }
+    ];
+    
+    return plugins.map(plugin => `
+        <div class="software-card">
+            <div class="software-header">
+                <div class="software-icon plugin">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                    </svg>
+                </div>
+                <div class="software-title">
+                    <h5>${plugin.name}</h5>
+                    <span class="software-cost">$${plugin.cost}/mo</span>
+                </div>
+            </div>
+            <div class="vendor-badge">${plugin.vendor}</div>
+            <div class="software-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Usage</span>
+                    <span class="stat-value">${Math.round(plugin.usage / 60)}h</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Host App</span>
+                    <span class="stat-value">After Effects</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">License</span>
+                    <span class="stat-value text-success">Valid</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function generateUsageHistory() {
+    const history = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(Date.now() - (i * 86400000));
+        history.push({
+            date: date,
+            sessions: Math.floor(Math.random() * 5) + 1,
+            totalHours: Math.floor(Math.random() * 8) + 1,
+            applications: Math.floor(Math.random() * 8) + 3,
+            plugins: Math.floor(Math.random() * 5) + 1
+        });
+    }
+    
+    return history.map(entry => `
+        <div class="history-entry">
+            <div class="history-time">
+                <div class="time-primary">${entry.date.toLocaleDateString()}</div>
+                <div class="time-secondary">${entry.date.toLocaleDateString('en-US', { weekday: 'long' })}</div>
+            </div>
+            <div class="history-content">
+                <div class="history-stats">
+                    <div class="stat-item">
+                        <strong>${entry.totalHours}</strong> hours total
+                    </div>
+                    <div class="stat-item">
+                        <strong>${entry.sessions}</strong> sessions
+                    </div>
+                    <div class="stat-item">
+                        <strong>${entry.applications}</strong> applications
+                    </div>
+                    <div class="stat-item">
+                        <strong>${entry.plugins}</strong> plugins
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function exportClientReport(clientId) {
+    showToast(`Exporting detailed report for ${clientId}...`, 'info');
+    // In production, this would generate and download a detailed report
+}

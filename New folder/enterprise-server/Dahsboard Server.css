@@ -1,0 +1,466 @@
+/* Enterprise Dashboard Styles - Add to styles.css */
+
+/* Enterprise Login */
+.enterprise-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+}
+
+.login-container {
+    background: var(--bg-secondary);
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow-lg);
+}
+
+.login-container h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.login-container p {
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Enterprise Dashboard Layout */
+.enterprise-dashboard {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.enterprise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.enterprise-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Enterprise Statistics */
+.enterprise-stats {
+    margin-bottom: 32px;
+}
+
+.enterprise-stat {
+    position: relative;
+    padding-left: 56px;
+}
+
+.enterprise-stat .stat-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-primary);
+    opacity: 0.3;
+}
+
+/* Department Statistics */
+.department-stats {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-top: 24px;
+}
+
+.department-stats h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.department-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.department-card {
+    background: var(--bg-tertiary);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.dept-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.dept-count {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.dept-online {
+    font-size: 12px;
+    color: var(--accent-success);
+    margin-bottom: 8px;
+}
+
+.dept-bar {
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.dept-bar-fill {
+    height: 100%;
+    background: var(--accent-success);
+    transition: width var(--transition-slow);
+}
+
+/* Enterprise Content Layout */
+.enterprise-content {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Clients Sidebar */
+.clients-sidebar {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.clients-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+/* Client Item */
+.client-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.client-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+}
+
+.client-item.selected {
+    background: linear-gradient(135deg, var(--bg-tertiary), rgba(0, 212, 255, 0.1));
+    border-color: var(--accent-primary);
+}
+
+.client-item.offline {
+    opacity: 0.7;
+}
+
+.client-status {
+    margin-right: 12px;
+}
+
+.client-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.client-info h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.client-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.client-meta .separator {
+    color: var(--text-tertiary);
+}
+
+.department {
+    color: var(--accent-primary);
+}
+
+.platform {
+    text-transform: capitalize;
+}
+
+.last-seen {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+.client-stats-mini {
+    display: flex;
+    gap: 12px;
+    margin-left: 8px;
+}
+
+.stat-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-mini .stat-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+}
+
+.stat-mini .stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* Client Details */
+.client-details {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow-y: auto;
+}
+
+.client-detail-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.client-header-info h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.client-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: rgba(0, 255, 136, 0.15);
+    color: var(--accent-success);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.badge-danger {
+    background: rgba(255, 0, 68, 0.15);
+    color: var(--accent-danger);
+    border: 1px solid rgba(255, 0, 68, 0.3);
+}
+
+.badge-info {
+    background: rgba(0, 212, 255, 0.15);
+    color: var(--accent-primary);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.badge-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.client-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.client-detail-content {
+    padding: 24px;
+}
+
+.detail-section {
+    margin-bottom: 32px;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+/* System Info Grid */
+.system-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.info-card {
+    background: var(--bg-tertiary);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.info-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Usage Statistics Grid */
+.usage-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.usage-stat {
+    background: var(--bg-tertiary);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.usage-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    margin-bottom: 4px;
+}
+
+.usage-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Enterprise Empty State */
+.client-details .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 400px;
+    color: var(--text-secondary);
+}
+
+.client-details .empty-state svg {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 24px;
+    opacity: 0.2;
+}
+
+.client-details .empty-state h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .enterprise-content {
+        grid-template-columns: 280px 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .enterprise-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .clients-sidebar {
+        max-height: 300px;
+    }
+    
+    .enterprise-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

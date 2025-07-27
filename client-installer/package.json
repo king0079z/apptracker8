@@ -1,0 +1,27 @@
+{
+  "name": "enterprise-monitor-client-installer",
+  "version": "1.0.0",
+  "description": "Enterprise Monitor Client Setup Wizard",
+  "main": "setup-wizard.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "npm run build:prepare && electron-builder",
+    "build:prepare": "node prepare-build.js",
+    "build:win": "npm run build:prepare && electron-builder --win",
+    "build:mac": "npm run build:prepare && electron-builder --mac",
+    "build:linux": "npm run build:prepare && electron-builder --linux",
+    "clean": "rimraf ../dist-client"
+  },
+  "dependencies": {
+    "electron": "^27.1.3",
+    "sudo-prompt": "^9.2.1"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.9.1",
+    "rimraf": "^5.0.5"
+  },
+  "build": {
+    "extends": "./electron-builder.yml"
+  }
+}

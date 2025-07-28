@@ -1,0 +1,20 @@
+{
+  "watch": [
+    "src/main/**/*",
+    "src/renderer/**/*"
+  ],
+  "ext": "js,html,css,json",
+  "ignore": [
+    "src/**/*.spec.js",
+    "src/**/*.test.js",
+    "node_modules/**/*",
+    "dist/**/*",
+    "dist-client/**/*",
+    "coverage/**/*",
+    "logs/**/*"
+  ],
+  "exec": "electron .",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

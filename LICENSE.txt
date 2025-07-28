@@ -1,42 +1,57 @@
-MIT License
+PROPRIETARY SOFTWARE LICENSE AGREEMENT
 
-Copyright (c) 2024 [Your Company Name]
+Copyright (c) 2024 Abouelfetouh. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and associated documentation files (the "Software") are the 
+proprietary and confidential property of Your Company Name ("Company").
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+GRANT OF LICENSE
+Subject to the terms and conditions of this Agreement, Company grants you a 
+non-exclusive, non-transferable, limited license to use the Software solely 
+for your internal business purposes.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+RESTRICTIONS
+You may not:
+1. Copy, modify, or create derivative works of the Software
+2. Distribute, sell, lease, rent, or sublicense the Software
+3. Reverse engineer, disassemble, or decompile the Software
+4. Remove or alter any proprietary notices or labels on the Software
 
----
+OWNERSHIP
+The Software is licensed, not sold. Company retains all right, title, and 
+interest in and to the Software, including all intellectual property rights.
 
-Third-Party Licenses:
+CONFIDENTIALITY
+You agree to maintain the confidentiality of the Software and not to disclose 
+it to any third party without Company's prior written consent.
 
-This software includes the following third-party libraries:
+TERMINATION
+This license is effective until terminated. Company may terminate this license 
+at any time if you fail to comply with any term of this Agreement. Upon 
+termination, you must destroy all copies of the Software.
 
-1. Electron - MIT License
-   Copyright (c) Electron contributors
-   Copyright (c) 2013-2020 GitHub Inc.
+WARRANTY DISCLAIMER
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
 
-2. electron-builder - MIT License
-   Copyright (c) 2015 Loopline Systems
+LIMITATION OF LIABILITY
+IN NO EVENT SHALL COMPANY BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, 
+CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO YOUR USE OF 
+THE SOFTWARE.
 
-3. electron-store - MIT License
-   Copyright (c) Sindre Sorhus
+GOVERNING LAW
+This Agreement shall be governed by and construed in accordance with the laws 
+of [Your Jurisdiction], without regard to its conflict of law provisions.
 
-4. node-schedule - MIT License
-   Copyright (c) 2015 Matt Patenaude
+ENTIRE AGREEMENT
+This Agreement constitutes the entire agreement between you and Company 
+regarding the Software and supersedes all prior agreements and understandings.
 
-For full license texts of dependencies, see the respective packages in node_modules.
+By installing or using the Software, you acknowledge that you have read this 
+Agreement, understand it, and agree to be bound by its terms and conditions.
+
+For questions about this Agreement, please contact:
+Abouelfetouh	
+Address
+Email: Abouelfetouh Mohamed@copywrite
